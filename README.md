@@ -40,7 +40,9 @@ The language provided by the compiler falls as close as possible to the one desc
         a[b] == *(a + b * WORD_SIZE)
     
     With no type information made available in the language at all, it simply isn’t possible to know what an argument represents and convert the pointer arithmetic accordingly (this also means that `*++p != p[1]`).
+    
     (a fix would involve marshalling between B and the rest of the universe, which is too much effort)
+    
     There is also no library provided (except for the `char` function), on the grounds that you can just use libc instead.
 
 2.  Extension features:
@@ -50,27 +52,28 @@ The language provided by the compiler falls as close as possible to the one desc
     - GCC-style computed `goto`s/labels-as-values are supported, insofar as a label can be used as a value, and `goto` accepts any expression as its argument (the manual is unclear on whether this is supposed to be allowed, so it is)
     - Single-statement functions do not need braces around the body (again, unclear, so permitted)
     - Functions automatically return the last value evaluated. Combined with the above, this means cute one-liners can be written in a more equational style:
-
-        add(a, b) a + b;
+    
+            add(a, b) a + b;
 
 3.  Pitfalls and differences from C
     - famously, compound assignment operators are the “wrong way around” in B:
     
-        a =- 2;  /* Decrements a by 2, does not set it to -2 */
+            a =- 2;  /* Decrements a by 2, does not set it to -2 */
     
       So put spaces around your operators.
     - There is essentially no global scope in B. To use global variables, they must be redeclared *inside* the function body, with `extrn`. As an exception, this is not necessary for global names that appear only in the call position (so you don’t need to redeclare `printf` everywhere).
     - As above with the lack of pointer arithmetic, the complete lack of type information means that values do not “decay” where you might expect. Specifically, to take the address of a global function, you *must* use the `&` operator:
     
-        auto f; extrn malloc;
-        f = &malloc;
+            auto f, mem; extrn malloc;
+            f = &malloc;
+            mem = f(256);
     
     - Don’t call function pointers stored in global variables without dereferencing them (with `*`) or storing them in a local variable (local variables can be called “bare”, like in C - do not dereference manually).
     - Goes without saying but do not attempt to `goto` a function, to invoke a label, or to `goto` a label from outside its function. This will certainly break.
     - Names are allowed to include the dot character `.`, since it isn’t in use otherwise (no floats, no structs). In fact, since it counts as a letter, you can have a function named `...` if you want.
     - The escape character in strings and char constants is `*`, not the backslash. (However, the string terminator is still `’0’`, for easy interop with libc. `’*e’` is unused.)
 
-
+-------
 
 Happy coding! (and please report any bugs)
 
