@@ -98,8 +98,10 @@ Function BuildVar(n:TParseNode, name:String)
 				Case "sconst"
 					v.inits.AddLast "STR$_" + YBCodeGen.strs.Count()
 					YBCodeGen.strs.AddLast i.term.value
-				Case "iconst", "name"
+				Case "iconst"
 					v.inits.AddLast i.term.value
+				Case "name"
+					v.inits.AddLast YBCodeGen.Platformize(i.term.value)
 				Case "cconst"
 					v.inits.AddLast String.FromInt(CharConstIVal(i.term.value))
 			End Select

@@ -39,6 +39,8 @@ For Local a:Int = 1 Until AppArgs.Length
 			EndIf
 		Case "-s"
 			keepAsm = 1
+		Case "-S"
+			keepAsm = 1 ; doAssemble = 0 ; makeExe = 0
 		Case "--as"
 			a :+ 1 ; as = AppArgs[a] + " "
 		Case "--ld"
@@ -48,7 +50,7 @@ For Local a:Int = 1 Until AppArgs.Length
 		Case "--ld-opt"
 			a :+ 1 ; ldOpts :+ AppArgs[a] + " "
 		Case "--tree"
-			showAST = 1
+			showAST = 1 ; makeExe = 0
 		Case "-w"     ; YBCodeGen.SetWarningLevel 0
 		Case "--werr" ; YBCodeGen.SetWarningLevel 2
 		Case "--warn" ; YBCodeGen.SetWarningLevel 1
@@ -75,13 +77,13 @@ For Local file:String = EachIn files
 			Print tree.ToString()
 		Else
 			YBCodeGen.Build tree
-			YBAssembler.Emit file + "_.s", YBCodeGen.syms, YBCodeGen.funs, YBCodeGen.vars, YBCodeGen.strs
+			YBAssembler.Emit file + ".s", YBCodeGen.syms, YBCodeGen.funs, YBCodeGen.vars, YBCodeGen.strs
 			If doAssemble
-				system_(as + asOpts + file + "_.s -o " + file + "_.o")
-				allOFiles :+ file + "_.o "
+				system_(as + asOpts + file + ".s -o " + file + ".o")
+				allOFiles :+ file + ".o "
 			EndIf
 			If Not keepAsm
-				system_ rm + file + "_.s"
+				system_ rm + file + ".s"
 			EndIf
 		EndIf
 	Catch e:Object
@@ -121,7 +123,8 @@ Function DisplayHelp()
 	Print "  -v          Show the compiler version"
 	Print "  -o          Set the name of the output executable (default 'a.out')"
 	Print "  -c          Produce separate .o files instead of an executable"
-	Print "  -s          Produce text assembly .s files instead of binaries"
+	Print "  -s          Keep text assembly .s files"
+	Print "  -S          Only produce text assembly, do not assemble binaries"
 	Print "  --as        Set the command to use as the assembler"
 	Print "  --ld        Set the command to use as the linker"
 	Print "  --as-opt    Add an option to pass to the assembler (can repeat)"

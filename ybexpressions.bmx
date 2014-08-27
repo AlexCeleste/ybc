@@ -199,7 +199,6 @@ Type Expr Final
 			If isFCall
 				f.ins.AddLast "mov " + gname + ", %eax"
 			Else
-				DebugStop
 				Local u:Unknown = New Unknown ; u.name = name ; u.t = s.term
 				f.unknowns.AddLast u
 				f.ins.AddLast "mov $" + f.name + "$" + name + ", %eax"
