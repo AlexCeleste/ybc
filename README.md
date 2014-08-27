@@ -17,7 +17,8 @@ The compiler is made available under the MIT/X11 licence, see [LICENSE file](LIC
       -v          Show the compiler version
       -o          Set the name of the output executable (default 'a.out')
       -c          Produce separate .o files instead of an executable
-      -s          Produce text assembly .s files instead of binaries
+      -s          Keep text assembly .s files
+      -S          Only produce text assembly, do not assemble binaries
       --as        Set the command to use as the assembler
       --ld        Set the command to use as the linker
       --as-opt    Add an option to pass to the assembler (can repeat)
@@ -56,23 +57,23 @@ The language provided by the compiler falls as close as possible to the one desc
             add(a, b) a + b;
 
 3.  Pitfalls and differences from C
-    - famously, compound assignment operators are the “wrong way around” in B:
+    - famously, compound assignment operators are the "wrong way around" in B:
     
             a =- 2;  /* Decrements a by 2, does not set it to -2 */
     
       So put spaces around your operators.
     - There is essentially no global scope in B. To use global variables, they must be redeclared *inside* the function body, with `extrn`. As an exception, this is not necessary for global names that appear only in the call position (so you don’t need to redeclare `printf` everywhere).
-    - As above with the lack of pointer arithmetic, the complete lack of type information means that values do not “decay” where you might expect. Specifically, to take the address of a global function, you *must* use the `&` operator:
+    - As above with the lack of pointer arithmetic, the complete lack of type information means that values do not "decay" where you might expect. Specifically, to take the address of a global function, you *must* use the `&` operator:
     
             auto f, mem; extrn malloc;
             f = &malloc;
             mem = f(256);
     
-    - Don’t call function pointers stored in global *variables* (as opposed to their base global definitions) without either dereferencing them (with `*`) or storing them in a local variable (local variables can be called “bare”, like in C - do not dereference manually).
+    - Don’t call function pointers stored in global *variables* (as opposed to their base global definitions) without either dereferencing them (with `*`) or storing them in a local variable (local variables can be called "bare", like in C - do not dereference manually).
     - Goes without saying but do not attempt to `goto` a function, to invoke a label, or to `goto` a label from outside its function. This will certainly break.
     - Do not attempt to assign to a function...
-    - Names are allowed to include the dot character `.`, since it isn’t in use otherwise (no floats, no structs). In fact, since it counts as a letter, you can have a function named `...` if you want.
-    - The escape character in strings and char constants is `*`, not the backslash. (However, the string terminator is still `’0’`, for easy interop with libc. `’*e’` is unused.)
+    - Names are allowed to include the dot character `.`, since it isn't in use otherwise (no floats, no structs). In fact, since it counts as a letter, you can have a function named `...` if you want.
+    - The escape character in strings and char constants is `*`, not the backslash. (However, the string terminator is still `0`, for easy interop with libc. `'*e'` is unused.)
 
 -------
 

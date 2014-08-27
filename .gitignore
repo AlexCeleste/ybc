@@ -1,0 +1,10 @@
+*.exe
+*.app
+*.a
+*.o
+*.dll
+*.zip
+*.b.s
+a.out
+tmp/*
+.bmx/*
