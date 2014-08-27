@@ -27,6 +27,8 @@ The compiler is made available under the MIT/X11 licence, see [LICENSE file](LIC
       --werr      Convert warnings to errors
       --warn      Notify but do not halt on warnings (default)
 
+To produce a working executable/library, the produced .s or .o files must be linked with `b-lib.o`, which provides a few critical functions.
+
 
 **Language:**
 
