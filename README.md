@@ -8,6 +8,8 @@ YBC ("Yasha's B Compiler") is a compiler for the B Programming Language, as spec
 
 The compiler is made available under the MIT/X11 licence, see [LICENSE file](LICENSE).
 
+You will not (ever) be able to use this compiler to build antique B programs from the 70s. Fundamental differences (see below) make such a task impossible - this is a toy, intended for getting the feel of B (or, if you're a maniac, writing new programs).
+
 
 **Usage:**
 
@@ -35,7 +37,7 @@ To produce a working executable/library, the produced .s or .o files must be lin
 
 The language provided by the compiler falls as close as possible to the one described in the documents mentioned above (and to a lesser extent, the MH-TSS Reference). The descriptions of the language are somewhat vague and occasionally contradictory, but hopefully this is at least a vaguely faithful presentation.
 
-1.  Major difference from the original:
+1.  Major difference from the original:  
     The original B was designed for a platform that addressed whole words. x86 doesn’t do this. Therefore on x86 it is not possible to have both `v[1]` refer to the second word element of a vector, *and* for `a[b] == b[a] == *(a + b)` to hold. As a result, the latter - despite being kept as a core principle of C - **does not apply** to this implementation; instead, the following rule holds:
     
         a[b] == *(a + b * WORD_SIZE)
@@ -45,6 +47,8 @@ The language provided by the compiler falls as close as possible to the one desc
     (a fix would involve marshalling between B and the rest of the universe, which is too much effort)
     
     There is also no library provided (except for the `char` function), on the grounds that you can just use libc instead.
+    
+    This compiler currently doesn't support inconsistent short-circuiting behaviour of `&` and `|`; it isn't yet clear whether it should do so.
 
 2.  Extension features:
     - The `break` and `default` keywords from the tutorial are present in the language.
