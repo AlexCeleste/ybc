@@ -68,8 +68,9 @@ The language provided by the compiler falls as close as possible to the one desc
             f = &malloc;
             mem = f(256);
     
-    - Don’t call function pointers stored in global variables without dereferencing them (with `*`) or storing them in a local variable (local variables can be called “bare”, like in C - do not dereference manually).
+    - Don’t call function pointers stored in global *variables* (as opposed to their base global definitions) without either dereferencing them (with `*`) or storing them in a local variable (local variables can be called “bare”, like in C - do not dereference manually).
     - Goes without saying but do not attempt to `goto` a function, to invoke a label, or to `goto` a label from outside its function. This will certainly break.
+    - Do not attempt to assign to a function...
     - Names are allowed to include the dot character `.`, since it isn’t in use otherwise (no floats, no structs). In fact, since it counts as a letter, you can have a function named `...` if you want.
     - The escape character in strings and char constants is `*`, not the backslash. (However, the string terminator is still `’0’`, for easy interop with libc. `’*e’` is unused.)
 
