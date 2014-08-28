@@ -23,9 +23,10 @@ Type YBFunDef Final
 End Type
 
 Type YBCodeGen Final
-	Global syms:TList = CreateList(), vars:TList = CreateList(), funs:TList = CreateList(), strs:TList = CreateList()
+	Global syms:TList, vars:TList, funs:TList, strs:TList
 	
 	Function Build(tree:TParseNode)
+		syms = CreateList() ; vars = CreateList() ; funs = CreateList() ; strs = CreateList()
 		labelCounter = 0
 		' Generate code directly from expression tree
 		For Local n:TParseNode = EachIn tree.elem
@@ -132,6 +133,7 @@ Function BuildFun(n:TParseNode, name:String)
 		Next
 		Throw "unable to link unknown names"
 	EndIf
+	f.autos = Null ; f.extrns = Null ; f.unknowns = Null ; f.labels = Null ; f.swstack = Null ; f.scstack = Null ' none of these will be needed again
 	YBCodeGen.funs.AddLast f
 End Function
 
