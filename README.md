@@ -12,6 +12,9 @@ You will not (ever) be able to use this compiler to build antique B programs fro
 
 The compiler outputs GAS assembly and assumes the existence of GCC (or Clang on Mac OS X) to assemble it.
 
+[download for Mac OS X](releases/tag/v0.5-mac)
+[download for Linux](releases/tag/v0.5-linux)
+
 
 **Usage:**
 
