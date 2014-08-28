@@ -4,6 +4,9 @@
 
 SuperStrict
 
+Framework Brl.Blitz
+Import Brl.LinkedList
+
 Import "ybparser.bmx"
 Import "ybcodegen.bmx"
 Import "ybassembler.bmx"

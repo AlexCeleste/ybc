@@ -10,6 +10,8 @@ The compiler is made available under the MIT/X11 licence, see [LICENSE file](LIC
 
 You will not (ever) be able to use this compiler to build antique B programs from the 70s. Fundamental differences (see below) make such a task impossible - this is a toy, intended for getting the feel of B (or, if you're a maniac, writing new programs).
 
+The compiler outputs GAS assembly and assumes the existence of GCC (or Clang on Mac OS X) to assemble it.
+
 
 **Usage:**
 

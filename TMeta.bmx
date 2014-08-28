@@ -5,6 +5,11 @@
 Import BaH.Regex
 SuperStrict
 
+Import Brl.Retro
+Import Brl.LinkedList
+Import Brl.Map
+Import Brl.Reflection
+
 Public
 
 ' TMetaParser
