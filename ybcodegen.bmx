@@ -20,6 +20,9 @@ Type YBFunDef Final
 		ins = CreateList() ; autos = CreateList() ; extrns = CreateList()
 		unknowns = CreateList() ; labels = CreateList() ; swstack = CreateList() ; scstack = CreateList()
 	End Method
+	Method AddI(i:Object)
+		ins.AddLast i
+	End Method
 End Type
 
 Type YBCodeGen Final
@@ -180,7 +183,7 @@ Function BuildLocalVarSt(f:YBFunDef, s:TParseNode)
 				If sz.term.ttype = "iconst" Then v.sz = Int(sz.term.value) Else v.sz = CharConstIVal(sz.term.value)
 			EndIf
 			v.pos = top + v.sz + 1
-			f.ins.AddLast "lea " + -(v.pos * 4 - 4) + "(%ebp), %eax ; mov %eax, " + -(v.pos * 4) + "(%ebp)"
+			f.AddI "lea " + -(v.pos * 4 - 4) + "(%ebp), %eax ; mov %eax, " + -(v.pos * 4) + "(%ebp)"
 		Else
 			v.pos = top + 1
 		EndIf
@@ -207,7 +210,7 @@ Function BuildLabelSt(f:YBFunDef, s:TParseNode)
 		If l = u.name Then f.unknowns.Remove u
 	Next
 	f.labels.AddLast l
-	f.ins.AddLast "^" + f.name + "$" + l + ":"
+	f.AddI "^" + f.name + "$" + l + ":"
 End Function
 
 Function BuildCaseSt(f:YBFunDef, s:TParseNode)
@@ -224,7 +227,7 @@ Function BuildCaseSt(f:YBFunDef, s:TParseNode)
 			If sw.cases[i] = cval Then Throw CGError.Make(f, c.term, "duplicate case value '" + c.term.value + "' in switch block")
 		Next
 		sw.cases :+ [cval] ; sw.caselabels :+ [GetAnonLabel()]
-		f.ins.AddLast "^" + sw.caselabels[sw.caselabels.Length - 1] + ":"
+		f.AddI "^" + sw.caselabels[sw.caselabels.Length - 1] + ":"
 	Else
 		CGError.Warn f, c.term, "'case' statement without surrounding switch, does nothing"
 	EndIf
@@ -233,7 +236,7 @@ End Function
 Function BuildBreakSt(f:YBFunDef, s:TParseNode)
 	Local sw:Switch = Switch(f.swstack.Last())	'because it could be a while
 	If sw
-		f.ins.AddLast "jmp " + sw.pastBody
+		f.AddI "jmp " + sw.pastBody
 	Else
 		CGError.Warn f, s.GetElem("break").term, "'break' statement without surrounding switch or loop, does nothing"
 	EndIf
@@ -245,7 +248,7 @@ Function BuildDefaultSt(f:YBFunDef, s:TParseNode)
 		If sw.defd Then Throw CGError.Make(f, s.GetElem("default").term, "duplicate 'default' target in switch block")
 		Local d:String = GetAnonLabel()
 		sw.prev = f.ins.InsertBeforeLink("jmp " + d, sw.prev)
-		f.ins.AddLast "^" + d + ":"
+		f.AddI "^" + d + ":"
 		sw.defd = 1
 	Else
 		CGError.Warn f, s.GetElem("default").term, "'default' statement without surrounding switch, does nothing"
@@ -260,7 +263,7 @@ Function BuildSwitchSt(f:YBFunDef, s:TParseNode)
 	sw.pastBody = GetAnonLabel()
 	sw.prev = f.ins.InsertAfterLink("jmp " + sw.pastBody, sw.prev)
 	BuildStmtList f, s.GetElem("body")
-	f.ins.AddLast "^" + sw.pastBody + ":"
+	f.AddI "^" + sw.pastBody + ":"
 	For Local c:Int = 0 Until sw.cases.Length
 		f.ins.InsertBeforeLink("cmp $" + sw.cases[c] + ", %eax", sw.prev)
 		f.ins.InsertBeforeLink("jz " + sw.caselabels[c], sw.prev)
@@ -279,39 +282,39 @@ End Function
 Function BuildIfSt(f:YBFunDef, s:TParseNode)
 	Expr.Compile f, s.GetElem("expr")
 	Local pastThen:String = GetAnonLabel(), pastElse:String = GetAnonLabel(), e:TParseNode = s.GetElem("else")
-	f.ins.AddLast "cmp $0, %eax"
-	f.ins.AddLast "jz " + pastThen
+	f.AddI "cmp $0, %eax"
+	f.AddI "jz " + pastThen
 	BuildStmtList f, s.GetElem("then")
-	If e Then f.ins.AddLast "jmp " + pastElse
-	f.ins.AddLast "^" + pastThen + ":"
+	If e Then f.AddI "jmp " + pastElse
+	f.AddI "^" + pastThen + ":"
 	If e
 		BuildStmtList f, e
-		f.ins.AddLast "^" + pastElse + ":"
+		f.AddI "^" + pastElse + ":"
 	EndIf
 End Function
 
 Function BuildWhileSt(f:YBFunDef, s:TParseNode)
 	Local top:String = GetAnonLabel(), pastBody:String = GetAnonLabel()
 	Local w:Switch = New Switch ; f.swstack.AddLast w ; w.pastBody = pastBody
-	f.ins.AddLast "^" + top + ":"
+	f.AddI "^" + top + ":"
 	Expr.Compile f, s.GetElem("expr")
-	f.ins.AddLast "cmp $0, %eax"
-	f.ins.AddLast "jz " + pastBody
+	f.AddI "cmp $0, %eax"
+	f.AddI "jz " + pastBody
 	BuildStmtList f, s.GetElem("body")
-	f.ins.AddLast "jmp " + top
-	f.ins.AddLast "^" + pastBody + ":"
+	f.AddI "jmp " + top
+	f.AddI "^" + pastBody + ":"
 	f.swstack.RemoveLast()
 End Function
 
 Function BuildGotoSt(f:YBFunDef, s:TParseNode)
 	Expr.Compile f, s.GetElem("dst")
-	f.ins.AddLast "jmp *%eax"
+	f.AddI "jmp *%eax"
 End Function
 
 Function BuildReturnSt(f:YBFunDef, s:TParseNode)
 	Local val:TParseNode = s.GetElem("val")
 	If val Then Expr.Compile f, val
-	f.ins.AddLast "jmp return$" + f.name
+	f.AddI "jmp return$" + f.name
 End Function
 
 Function CheckDups(name:String, t:TToken)

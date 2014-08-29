@@ -78,20 +78,20 @@ Type Expr Final
 			SelectBin f, r.elem[0].term.value, d, "%eax"
 			PopTemp f
 		Else
-			f.ins.AddLast "mov $" + l.term.value + ", %eax"
+			f.AddI "mov $" + l.term.value + ", %eax"
 		EndIf
 	End Function
 	
 	Function Ternary(f:YBFunDef, s:TParseNode)
 		Compile f, s.GetElem("expr")
 		Local pastThen:String = GetAnonLabel(), pastElse:String = GetAnonLabel(), tail:TParseNode = s.GetElem("tail")
-		f.ins.AddLast "cmp $0, %eax"
-		f.ins.AddLast "jz " + pastThen
+		f.AddI "cmp $0, %eax"
+		f.AddI "jz " + pastThen
 		Compile f, tail.GetElem("then")
-		f.ins.AddLast "jmp " + pastElse
-		f.ins.AddLast "^" + pastThen + ":"
+		f.AddI "jmp " + pastElse
+		f.AddI "^" + pastThen + ":"
 		Compile f, tail.GetElem("else")
-		f.ins.AddLast "^" + pastElse + ":"
+		f.AddI "^" + pastElse + ":"
 	End Function
 	
 	Function PostFix(f:YBFunDef, s:TParseNode)
@@ -100,16 +100,16 @@ Type Expr Final
 			Case "Index", "FunCall"
 				Compile f, s.GetElem("val"), (ops[0].rule = "FunCall")
 			Default	'++/--
-				LoadLVal f, s.GetElem("val"), ops[0].term ; isLV = 1 ; f.ins.AddLast "mov (%edx), %eax"
+				LoadLVal f, s.GetElem("val"), ops[0].term ; isLV = 1 ; f.AddI "mov (%edx), %eax"
 		End Select
 		For Local op:TParseNode = EachIn ops
 			Select op.rule
 				Case "Index"
 					PushTemp f ; Compile f, op.GetElem("elem") ; Local REG:String = PopTemp(f)
 					If f.tempdepth < 4
-						f.ins.AddLast "lea (" + REG + ", %eax, 4), %edx ; mov (%edx), %eax"
+						f.AddI "lea (" + REG + ", %eax, 4), %edx ; mov (%edx), %eax"
 					Else
-						f.ins.AddLast "mov " + REG + ", %edx ; lea (%edx, %eax, 4), %edx ; mov (%edx), %eax"
+						f.AddI "mov " + REG + ", %edx ; lea (%edx, %eax, 4), %edx ; mov (%edx), %eax"
 					EndIf
 				Case "FunCall"
 					f.callersave = 1
@@ -123,24 +123,24 @@ Type Expr Final
 						For Local arg:Int = args.elem.Length - 1 To 0 Step -1
 							Local REG:String = PopTemp(f)
 							If f.tempdepth < 4
-								f.ins.AddLast "mov " + REG + ", " + (arg * 4) + "(%esp)"
+								f.AddI "mov " + REG + ", " + (arg * 4) + "(%esp)"
 							Else
-								f.ins.AddLast "mov " + REG + ", %eax ; mov %eax, " + (arg * 4) + "(%esp)"
+								f.AddI "mov " + REG + ", %eax ; mov %eax, " + (arg * 4) + "(%esp)"
 							EndIf
 						Next
 						Local REG:String = PopTemp(f)
-						f.ins.AddLast "mov %ecx, TEMP{0} ; mov %edx, TEMP{-1}"
-						If f.tempdepth < 4 Then f.ins.AddLast "call *" + REG Else f.ins.AddLast "mov " + REG + ", %eax ; call *%eax"
+						f.AddI "mov %ecx, TEMP{0} ; mov %edx, TEMP{-1}"
+						If f.tempdepth < 4 Then f.AddI "call *" + REG Else f.AddI "mov " + REG + ", %eax ; call *%eax"
 					Else
-						f.ins.AddLast "mov %ecx, TEMP{0} ; mov %edx, TEMP{-1} ; call *%eax"
+						f.AddI "mov %ecx, TEMP{0} ; mov %edx, TEMP{-1} ; call *%eax"
 					EndIf
-					f.ins.AddLast "mov TEMP{0}, %ecx ; mov TEMP{-1}, %edx"
+					f.AddI "mov TEMP{0}, %ecx ; mov TEMP{-1}, %edx"
 				Default
 					If Not isLV Then Throw CGError.Make(f, op.term, "target of '" + op.term.value + "' operator is not assignable")
 					If op.term.value = "++"
-						f.ins.AddLast "mov (%edx), %eax ; incl (%edx)"
+						f.AddI "mov (%edx), %eax ; incl (%edx)"
 					Else
-						f.ins.AddLast "mov (%edx), %eax ; decl (%edx)"
+						f.AddI "mov (%edx), %eax ; decl (%edx)"
 					EndIf
 			End Select
 			isLV = (op.rule = "Index")
@@ -153,26 +153,26 @@ Type Expr Final
 			Case "-", "+", "!", "*"
 				Compile f, s.GetElem("val")
 			Case "&", "--", "++"
-				LoadLVal f, s.GetElem("val"), fst ; isLV = 1 ; f.ins.AddLast "mov (%edx), %eax"
+				LoadLVal f, s.GetElem("val"), fst ; isLV = 1 ; f.AddI "mov (%edx), %eax"
 		End Select
 		For Local o:Int = ops.elem.Length - 1 To 0 Step -1
 			Local op:String = ops.elem[o].term.value
 			Select op
 				Case "-"
-					f.ins.AddLast "neg %eax"
+					f.AddI "neg %eax"
 				Case "+"
 				Case "!"
-					f.ins.AddLast "cmp $0, %eax ; sete %al ; and $1, %eax"
+					f.AddI "cmp $0, %eax ; sete %al ; and $1, %eax"
 				Case "*"
-					f.ins.AddLast "mov %eax, %edx ; mov (%eax), %eax"
+					f.AddI "mov %eax, %edx ; mov (%eax), %eax"
 				Case "&", "--", "++"
 					If Not isLV Then Throw CGError.Make(f, ops.elem[o].term, "target of '" + op + "' operator is not assignable")
 					If op = "&"
-						f.ins.AddLast "mov %edx, %eax"
+						f.AddI "mov %edx, %eax"
 					ElseIf op = "--"
-						f.ins.AddLast "decl (%edx) ; mov (%edx), %eax"
+						f.AddI "decl (%edx) ; mov (%edx), %eax"
 					Else
-						f.ins.AddLast "incl (%edx) ; mov (%edx), %eax"
+						f.AddI "incl (%edx) ; mov (%edx), %eax"
 					EndIf
 			End Select
 			isLV = (op = "*")
@@ -182,37 +182,37 @@ Type Expr Final
 	Function VarName(f:YBFunDef, s:TParseNode, isFCall:Int)
 		Local found:Int = 0, name:String = s.term.value
 		For Local v:AutoVar = EachIn f.autos
-			If name = v.name Then f.ins.AddLast "mov " + -(v.pos * 4) + "(%ebp), %eax" ; found = 1 ; Exit
+			If name = v.name Then f.AddI "mov " + -(v.pos * 4) + "(%ebp), %eax" ; found = 1 ; Exit
 		Next
 		Local gname:String = YBCodeGen.Platformize(name) ; If isFCall Then gname = "$" + gname
 		If Not found
 			For Local v:String = EachIn f.extrns
-				If name = v Then f.ins.AddLast "mov " + gname + ", %eax" ; found = 1 ; Exit
+				If name = v Then f.AddI "mov " + gname + ", %eax" ; found = 1 ; Exit
 			Next
 		EndIf
 		If Not found
 			For Local v:String = EachIn f.labels
-				If name = v Then f.ins.AddLast "mov $" + f.name + "$" + v + ", %eax" ; found = 1 ; Exit
+				If name = v Then f.AddI "mov $" + f.name + "$" + v + ", %eax" ; found = 1 ; Exit
 			Next
 		EndIf
 		If Not found
 			If isFCall
-				f.ins.AddLast "mov " + gname + ", %eax"
+				f.AddI "mov " + gname + ", %eax"
 			Else
 				Local u:Unknown = New Unknown ; u.name = name ; u.t = s.term
 				f.unknowns.AddLast u
-				f.ins.AddLast "mov $" + f.name + "$" + name + ", %eax"
+				f.AddI "mov $" + f.name + "$" + name + ", %eax"
 			EndIf
 		EndIf
 	End Function
 	
 	Function Constant(f:YBFunDef, s:TParseNode)
 		If s.term.ttype = "iconst"
-			f.ins.AddLast "mov $" + s.term.value + ", %eax"
+			f.AddI "mov $" + s.term.value + ", %eax"
 		ElseIf s.term.ttype = "cconst"
-			f.ins.AddLast "mov $" + CharConstIVal(s.term.value) + ", %eax"
+			f.AddI "mov $" + CharConstIVal(s.term.value) + ", %eax"
 		Else
-			f.ins.AddLast "mov $STR$_" + YBCodeGen.strs.Count() + ", %eax"
+			f.AddI "mov $STR$_" + YBCodeGen.strs.Count() + ", %eax"
 			YBCodeGen.strs.AddLast s.term.value
 		EndIf
 	End Function
@@ -224,9 +224,9 @@ Type Expr Final
 			Local l2:TParseNode = l.elem[d].elem[0], op:String = l.elem[d].elem[1].term.value
 			If l2.rule = "UnaryExpr" Or l2.rule = "PostfixExpr" Then PushTemp f
 			LoadLVal f, l2, l.elem[d].elem[1].term
-			If l2.rule = "UnaryExpr" Or l2.rule = "PostfixExpr" Then f.ins.AddLast "mov " + PopTemp(f) + ", %eax"
+			If l2.rule = "UnaryExpr" Or l2.rule = "PostfixExpr" Then f.AddI "mov " + PopTemp(f) + ", %eax"
 			If op <> "=" Then SelectBin f, op[1..], "(%edx)", "%eax"
-			If op <> "=-" Then f.ins.AddLast "mov %eax, (%edx)"
+			If op <> "=-" Then f.AddI "mov %eax, (%edx)"
 		Next
 	End Function
 	
@@ -235,16 +235,16 @@ Type Expr Final
 			Case "AtomicExpr"	'var name
 				Local found:Int = 0, name:String = l2.term.value
 				For Local v:AutoVar = EachIn f.autos
-					If name = v.name Then f.ins.AddLast "lea " + -(v.pos * 4) + "(%ebp), %edx" ; found = 1 ; Exit
+					If name = v.name Then f.AddI "lea " + -(v.pos * 4) + "(%ebp), %edx" ; found = 1 ; Exit
 				Next
 				If Not found
 					For Local v:String = EachIn f.extrns
-						If name = v Then f.ins.AddLast "mov $" + YBCodeGen.Platformize(name) + ", %edx" ; found = 1 ; Exit
+						If name = v Then f.AddI "mov $" + YBCodeGen.Platformize(name) + ", %edx" ; found = 1 ; Exit
 					Next
 				EndIf
 				If Not found
 					For Local v:String = EachIn f.extrns
-						If name = v Then f.ins.AddLast "mov " + YBCodeGen.Platformize(name) + ", %edx" ; Exit
+						If name = v Then f.AddI "mov " + YBCodeGen.Platformize(name) + ", %edx" ; Exit
 					Next
 					If Not found Then Throw CGError.Make(f, et, "cannot treat label or undeclared variable '" + l2.term.value + "' as assignable")
 				EndIf
@@ -258,7 +258,7 @@ Type Expr Final
 				Else
 					uops.elem = uops.elem[1..] ; Compile f, uops
 				EndIf
-				f.ins.AddLast "mov %eax, %edx"
+				f.AddI "mov %eax, %edx"
 				
 			Case "PostfixExpr"	'var[0]
 				Local pops:TParseNode = l2.GetElem("op"), ind:TParseNode = pops.elem[pops.elem.Length - 1]
@@ -272,9 +272,9 @@ Type Expr Final
 					pops.elem = pops.elem[0..pops.elem.Length - 1] ; Compile f, l2
 				EndIf
 				Local REG:String = PopTemp(f) ; If f.tempdepth < 4
-					f.ins.AddLast "lea (%eax, " + REG + ", 4), %edx"
+					f.AddI "lea (%eax, " + REG + ", 4), %edx"
 				Else
-					f.ins.AddLast "mov " + REG + ", %edx ; lea (%eax, %edx, 4), %edx"
+					f.AddI "mov " + REG + ", %edx ; lea (%eax, %edx, 4), %edx"
 				EndIf
 				
 			Default
@@ -285,7 +285,7 @@ Type Expr Final
 	Global regstk:String[] = ["%ecx", "%ebx", "%esi", "%edi"]
 	Function PushTemp(f:YBFunDef)
 		Local r:String ; If f.tempdepth < 4 Then r = regstk[f.tempdepth] Else r = "TEMP{" + (f.tempdepth - 3) + "}"
-		f.ins.AddLast "mov %eax, " + r ; f.tempmax = Max(f.tempmax, f.tempdepth - 3)
+		f.AddI "mov %eax, " + r ; f.tempmax = Max(f.tempmax, f.tempdepth - 3)
 		f.tempdepth :+ 1 ; If f.tempdepth > 1 Then f.calleesave = 1
 	End Function
 	Function PeekTemp:String(f:YBFunDef)
@@ -318,28 +318,28 @@ Type Expr Final
 	
 	Function SelectBin(f:YBFunDef, o:String, l:String, r:String)
 		Select o
-			Case "|" ; f.ins.AddLast "or " + l + ", " + r
-			Case "&" ; f.ins.AddLast "and " + l + ", " + r
-			Case "==" ; f.ins.AddLast "cmp " + r + ", " + l + " ; sete %al ; and $1, %eax"
-			Case "!=" ; f.ins.AddLast "cmp " + r + ", " + l + " ; setne %al ; and $1, %eax"
-			Case "<" ; f.ins.AddLast "cmp " + r + ", " + l + " ; setl %al ; and $1, %eax"
-			Case "<=" ; f.ins.AddLast "cmp " + r + ", " + l + " ; setle %al ; and $1, %eax"
-			Case ">" ; f.ins.AddLast "cmp " + r + ", " + l + " ; setg %al ; and $1, %eax"
-			Case ">=" ; f.ins.AddLast "cmp " + r + ", " + l + " ; setge %al ; and $1, %eax"
-			Case "<<" ; f.ins.AddLast "shl " + l + ", " + r
-			Case ">>" ; f.ins.AddLast "shr " + l + ", " + r
-			Case "-" ; f.ins.AddLast "sub " + r + ", " + l + " ; mov " + l + ", %eax"
-			Case "+" ; f.ins.AddLast "add " + l + ", " + r
-			Case "*" ; f.ins.AddLast "imul " + l + ", " + r
+			Case "|" ; f.AddI "or " + l + ", " + r
+			Case "&" ; f.AddI "and " + l + ", " + r
+			Case "==" ; f.AddI "cmp " + r + ", " + l + " ; sete %al ; and $1, %eax"
+			Case "!=" ; f.AddI "cmp " + r + ", " + l + " ; setne %al ; and $1, %eax"
+			Case "<" ; f.AddI "cmp " + r + ", " + l + " ; setl %al ; and $1, %eax"
+			Case "<=" ; f.AddI "cmp " + r + ", " + l + " ; setle %al ; and $1, %eax"
+			Case ">" ; f.AddI "cmp " + r + ", " + l + " ; setg %al ; and $1, %eax"
+			Case ">=" ; f.AddI "cmp " + r + ", " + l + " ; setge %al ; and $1, %eax"
+			Case "<<" ; f.AddI "shl " + l + ", " + r
+			Case ">>" ; f.AddI "shr " + l + ", " + r
+			Case "-" ; f.AddI "sub " + r + ", " + l + " ; mov " + l + ", %eax"
+			Case "+" ; f.AddI "add " + l + ", " + r
+			Case "*" ; f.AddI "imul " + l + ", " + r
 			Case "%", "/"	'more complex
 				f.stackargs = Max(f.stackargs, 2) ; f.callersave = 1
 				PushTemp f
-				f.ins.AddLast "mov " + l + ", %eax ; mov %eax, (%esp)"
-				f.ins.AddLast "mov " + PopTemp(f) + ", %eax ; mov " + r + ", 4(%esp)"
+				f.AddI "mov " + l + ", %eax ; mov %eax, (%esp)"
+				f.AddI "mov " + PopTemp(f) + ", %eax ; mov " + r + ", 4(%esp)"
 				If o = "%" Then o = "mod" Else o = "div"
-				f.ins.AddLast "mov %ecx, TEMP{0} ; mov %edx, TEMP{-1}"
-				f.ins.AddLast "call lib$" + o
-				f.ins.AddLast "mov TEMP{0}, %ecx ; mov TEMP{-1}, %edx"
+				f.AddI "mov %ecx, TEMP{0} ; mov %edx, TEMP{-1}"
+				f.AddI "call lib$" + o
+				f.AddI "mov TEMP{0}, %ecx ; mov TEMP{-1}, %edx"
 		End Select
 	End Function
 	
