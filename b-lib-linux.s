@@ -1,4 +1,6 @@
-	.section	__TEXT,__text,regular,pure_instructions
+	.text
+	.align 4
+
 	.globl	lib$div
 lib$div:
 ## BB#0:
@@ -33,5 +35,3 @@ char:
 	popl	%ebp
 	ret
 
-
-.subsections_via_symbols
