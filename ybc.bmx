@@ -92,9 +92,9 @@ For Local file:String = EachIn files
 	Catch e:Object
 		Print "Compile error:~n    " + e.ToString()
 		Print "Compilation halted."
-		?Debug
-		Throw e
-		?
+	'	?Debug
+	'	Throw e
+	'	?
 		End
 	End Try
 Next
