@@ -17,6 +17,13 @@ The compiler outputs GAS assembly and assumes the existence of GCC (or Clang on 
 [download for Windows](https://github.com/Leushenko/ybc/releases/tag/v0.5-win)  
 
 
+**Building:**
+
+YBC is written in [BlitzMax](http://www.blitzbasic.com/Home/_index_.php). Prebuilt BlitzMax binaries can be downloaded from the Blitz Research homepage after creating an account, or obtained as source from [GitHub](https://github.com/blitz-research/blitzmax). Once BlitzMax is installed, compile the main YBC file `ybc.bmx` as a console application from the IDE (or with `bmk makeapp -a -o ybc ybc.bmx`).
+
+You will also need a GNU-compatible assembler and linker. GCC and Clang work best. Alternative assembler or linker programs can be passed to YBC with the `--as` or `--ld` command line options.
+
+
 **Usage:**
 
     USAGE: ybc [options] <files>
